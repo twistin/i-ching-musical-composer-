@@ -1,0 +1,6 @@
+{
+  "name": "I Ching Musical Composer",
+  "description": "An application to generate musical ideas for SuperCollider based on I Ching trigrams. Users can toss virtual coins to generate a hexagram, which then reveals two trigrams with associated musical interpretations and SuperCollider programming suggestions.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
