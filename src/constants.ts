@@ -1,4 +1,3 @@
-
 import { Trigram } from './types';
 
 // true = solid line (Yang), false = broken line (Yin)
@@ -120,8 +119,8 @@ export const TRIGRAM_DATA: Trigram[] = [
     },
     superColliderIdeas: {
       concept: "Quietud, detención, solidez. Sonidos estáticos y monumentales.",
-      synthExample: "SynthDef(\\montanaDrone, { |out=0, freq=80, amp=0.2, pan=0, cutoff=200| \n  var sig;\n  sig = LFSaw.ar([freq, freq*0.995, freq*1.005]); // Detuned for thickness\n  sig = RLPF.ar(sig, cutoff + SinOsc.kr(0.05).range(0, 50), 0.1);\n  sig = Splay.ar(sig, 0.8, amp, pan);\n  Out.ar(out, sig);\n}).add;",
-      patternExample: "Pbind(\n  \\instrument, \\montanaDrone,\n  \\degree, Pseq([0, Rest(8), 2, Rest(8)], inf), // Gong mode, sparse\n  \\scale, Scale.majorPentatonic, // or Scale.gong\n  \\octave, 3,\n  \\dur, Pseq([8, 4], inf),\n  \\amp, 0.2,\n  \\cutoff, Pwhite(150, 250)\n).play;"
+      synthExample: "SynthDef(\\montanaDrone, { |out=0, freq=80, amp=0.2, pan=0, cutoff=200| \n  var sig, env;\n	env = Env.perc(\\atk.ir(0.3), \\rel.ir(0.3),1,\\cur.ir(-5)).ar(2);\n  sig = LFSaw.ar([freq, freq*0.995, freq*1.005]); // Detuned for thickness\n  sig = RLPF.ar(sig, cutoff + SinOsc.kr(0.05).range(0, 50), 0.1);\n  sig = Splay.ar(sig, 0.8, amp, pan);\n	sig = sig * env * 0.2;\n  Out.ar(out, sig);\n}).add;",
+      patternExample: "Pbind(\n  \\instrument, \\montanaDrone,\n  \\degree, Pseq([0, Rest(8), 2, Rest(8),4,7] ,inf), // Gong mode, sparse\n  \\scale, Scale.majorPentatonic, // or Scale.gong\n  \\octave, 3,\n	\\ark, 2,\n	\\rel, 5,\n  \\dur, Pseq([4, 2], inf),\n  \\amp, 0.2,\n  \\cutoff, Pwhite(150, 250)\n);"
     }
   },
   {

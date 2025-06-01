@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Trigram, TossedLine, LineType } from './types';
 import { TRIGRAM_DATA, findTrigramByLines } from './constants';
@@ -6,13 +5,12 @@ import TrigramDetailCard from './components/TrigramDetailCard';
 import CoinTossControls from './components/CoinTossControls';
 import TrigramDisplay from './components/TrigramDisplay';
 import SuperColliderCodeModal from './components/SuperColliderCodeModal';
-import HexagramDisplay from './components/HexagramDisplay'; // New Component
-import HexagramDetailModal from './components/HexagramDetailModal'; // New Component
+import HexagramDisplay from './components/HexagramDisplay';
+import HexagramDetailModal from './components/HexagramDetailModal';
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
-// Ensure API_KEY is set in the environment. In a real deployment, this would be handled securely.
-// For this environment, we assume process.env.API_KEY is available.
-const API_KEY = process.env.API_KEY;
+// Access API_KEY from Vite's environment variables
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 const App: React.FC = () => {
   const [lowerTrigram, setLowerTrigram] = useState<Trigram | null>(null);
@@ -24,7 +22,6 @@ const App: React.FC = () => {
   const [selectedTrigramForModal, setSelectedTrigramForModal] = useState<Trigram | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // State for Hexagram details and Gemini API
   const [isHexagramModalOpen, setIsHexagramModalOpen] = useState<boolean>(false);
   const [hexagramMeaning, setHexagramMeaning] = useState<string | null>(null);
   const [isHexagramMeaningLoading, setIsHexagramMeaningLoading] = useState<boolean>(false);
@@ -34,32 +31,39 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (API_KEY) {
-      setAi(new GoogleGenAI({ apiKey: API_KEY }));
+      try {
+        setAi(new GoogleGenAI({ apiKey: API_KEY }));
+        console.log("GoogleGenAI SDK initialized.");
+      } catch (e) {
+        console.error("Failed to initialize GoogleGenAI SDK:", e);
+        setHexagramMeaningError("Error al inicializar el servicio de IA. Verifica la clave API y la configuración.");
+      }
     } else {
-      console.warn("API_KEY is not set. Gemini API features will be disabled.");
-      setHexagramMeaningError("La clave API para el servicio de IA no está configurada. El significado del hexagrama no se puede generar.");
+      console.warn("VITE_API_KEY is not set in .env file. Gemini API features will be disabled.");
+      setHexagramMeaningError("La clave API para el servicio de IA no está configurada (revisa tu archivo .env). El significado del hexagrama no se puede generar.");
     }
   }, []);
 
 
   const simulateCoinToss = (): number => {
-    const coin1 = Math.random() < 0.5 ? 2 : 3;
+    const coin1 = Math.random() < 0.5 ? 2 : 3; // 2 for tails (yin), 3 for heads (yang)
     const coin2 = Math.random() < 0.5 ? 2 : 3;
     const coin3 = Math.random() < 0.5 ? 2 : 3;
-    return coin1 + coin2 + coin3;
+    return coin1 + coin2 + coin3; // Sum: 6 (old yin), 7 (young yang), 8 (young yin), 9 (old yang)
   };
 
   const getLineFromTossValue = (value: number): TossedLine => {
-    if (value === 6) return { type: LineType.Broken, value, isChanging: true };
-    if (value === 7) return { type: LineType.Solid, value };
-    if (value === 8) return { type: LineType.Broken, value };
-    if (value === 9) return { type: LineType.Solid, value, isChanging: true };
-    throw new Error("Invalid coin toss value");
+    if (value === 6) return { type: LineType.Broken, value, isChanging: true }; // Old Yin (becomes Yang)
+    if (value === 7) return { type: LineType.Solid, value };                 // Young Yang
+    if (value === 8) return { type: LineType.Broken, value };               // Young Yin
+    if (value === 9) return { type: LineType.Solid, value, isChanging: true };   // Old Yang (becomes Yin)
+    throw new Error("Invalid coin toss value: " + value);
   };
   
   const fetchHexagramMeaning = useCallback(async (lower: Trigram, upper: Trigram) => {
     if (!ai) {
       setHexagramMeaningError("El servicio de IA no está inicializado. No se puede generar el significado.");
+      console.log('Attempted to fetch meaning, but AI service not available.');
       return;
     }
     setIsHexagramMeaningLoading(true);
@@ -69,14 +73,20 @@ const App: React.FC = () => {
     const prompt = `Interpreta el hexagrama del I Ching formado por el trigrama inferior '${lower.name} (${lower.chineseName})' (representando '${lower.superColliderIdeas.concept}') y el trigrama superior '${upper.name} (${upper.chineseName})' (representando '${upper.superColliderIdeas.concept}'). Describe su significado general, simbolismo clave y posibles implicaciones o inspiraciones para la composición musical. Sé conciso y evocador, en español.`;
 
     try {
+      console.log("Fetching hexagram meaning with prompt:", prompt);
       const response: GenerateContentResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-04-17',
+        model: 'gemini-2.5-flash-preview-04-17', 
         contents: prompt,
       });
+      console.log("Gemini API response received.");
       setHexagramMeaning(response.text);
-    } catch (e) {
-      console.error("Error fetching hexagram meaning:", e);
-      setHexagramMeaningError("Error al generar el significado del hexagrama. Inténtalo de nuevo.");
+    } catch (e: any) {
+      console.error("Error fetching hexagram meaning from Gemini API:", e);
+      let userFriendlyError = "Error al generar el significado del hexagrama. Inténtalo de nuevo.";
+      if (e.message) {
+          userFriendlyError += ` (Detalle: ${e.message})`;
+      }
+      setHexagramMeaningError(userFriendlyError);
     } finally {
       setIsHexagramMeaningLoading(false);
     }
@@ -87,11 +97,11 @@ const App: React.FC = () => {
     setError(null);
     setLowerTrigram(null);
     setUpperTrigram(null);
-    setTossedLinesResult([]); // Reset for animation
+    setTossedLinesResult([]); 
     setHexagramMeaning(null);
     setHexagramMeaningError(null);
 
-    const lines: TossedLine[] = []; // Local array to reliably collect lines
+    const linesCollector: TossedLine[] = []; 
     const tossPromises = [];
 
     for (let i = 0; i < 6; i++) {
@@ -100,29 +110,27 @@ const App: React.FC = () => {
           setTimeout(() => {
             const tossValue = simulateCoinToss();
             const line = getLineFromTossValue(tossValue);
-            lines.push(line); // Add to local array first
+            linesCollector.push(line); 
 
-            // Update state incrementally for animation by appending
             setTossedLinesResult(currentLines => [...currentLines, line]);
             resolve();
-          }, i * 200); // Stagger timeouts for sequential appearance
+          }, i * 200); 
         })
       );
     }
     
     Promise.all(tossPromises).then(() => {
-      // 'lines' array is now complete and correct
-      setTossedLinesResult([...lines]); // Ensure final state is set from the complete local 'lines' array
+      setTossedLinesResult([...linesCollector]);
 
       const lowerLinesBoolean: [boolean, boolean, boolean] = [
-        lines[0].type === LineType.Solid,
-        lines[1].type === LineType.Solid,
-        lines[2].type === LineType.Solid,
+        linesCollector[0].type === LineType.Solid,
+        linesCollector[1].type === LineType.Solid,
+        linesCollector[2].type === LineType.Solid,
       ];
       const upperLinesBoolean: [boolean, boolean, boolean] = [
-        lines[3].type === LineType.Solid,
-        lines[4].type === LineType.Solid,
-        lines[5].type === LineType.Solid,
+        linesCollector[3].type === LineType.Solid,
+        linesCollector[4].type === LineType.Solid,
+        linesCollector[5].type === LineType.Solid,
       ];
 
       const foundLower = findTrigramByLines(lowerLinesBoolean);
@@ -131,12 +139,12 @@ const App: React.FC = () => {
       if (foundLower && foundUpper) {
         setLowerTrigram(foundLower);
         setUpperTrigram(foundUpper);
-        if (ai) { // Only fetch meaning if AI is initialized
+        if (ai && API_KEY) {
             fetchHexagramMeaning(foundLower, foundUpper);
         } else if (!API_KEY) {
-            setHexagramMeaningError("La clave API no está configurada. El significado del hexagrama no se puede generar.");
+            setHexagramMeaningError("La clave API no está configurada (revisa tu archivo .env). El significado del hexagrama no se puede generar.");
         } else {
-            setHexagramMeaningError("El servicio de IA no está disponible. El significado del hexagrama no se puede generar.");
+             setHexagramMeaningError("El servicio de IA no está disponible. El significado del hexagrama no se puede generar.");
         }
       } else {
         setError("Error al determinar los trigramas. Inténtalo de nuevo.");
@@ -145,7 +153,7 @@ const App: React.FC = () => {
       setIsTossing(false);
     }).catch(err => {
         setError("Ocurrió un error durante el lanzamiento. Inténtalo de nuevo.");
-        console.error(err);
+        console.error("Error in Promise.all for coin tosses:", err);
         setIsTossing(false);
     });
   }, [fetchHexagramMeaning, ai]);
@@ -157,11 +165,15 @@ const App: React.FC = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setSelectedTrigramForModal(null); 
   };
 
   const handleOpenHexagramModal = () => {
     if (lowerTrigram && upperTrigram) {
       setIsHexagramModalOpen(true);
+      if (!hexagramMeaning && !isHexagramMeaningLoading && !hexagramMeaningError && ai && API_KEY) {
+        fetchHexagramMeaning(lowerTrigram, upperTrigram);
+      }
     }
   };
 
@@ -202,7 +214,7 @@ const App: React.FC = () => {
         )}
       </div>
       
-      {!lowerTrigram && !upperTrigram && !isTossing && (
+      {!lowerTrigram && !upperTrigram && !isTossing && tossedLinesResult.length === 0 && (
          <div className="mt-8 text-center text-gray-400">
             <p>Lanza las monedas para generar un hexagrama y descubrir tus trigramas musicales.</p>
             <p className="mt-2">O haz clic en cualquiera de los ocho trigramas de abajo para ver ideas de código SuperCollider.</p>
@@ -220,7 +232,7 @@ const App: React.FC = () => {
       
       <footer className="text-center text-gray-500 py-8 mt-auto">
         <p>&copy; {new Date().getFullYear()} I Ching Music Composer Helper. Inspirado en la sabiduría ancestral.</p>
-         {!API_KEY && <p className="text-red-500 text-xs mt-1">Advertencia: Funcionalidad de IA deshabilitada (API Key no configurada).</p>}
+         {!API_KEY && <p className="text-red-500 text-xs mt-1">Advertencia: Funcionalidad de IA deshabilitada (VITE_API_KEY no configurada en .env).</p>}
       </footer>
 
       {selectedTrigramForModal && (
@@ -231,7 +243,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {lowerTrigram && upperTrigram && (
+      {isHexagramModalOpen && lowerTrigram && upperTrigram && (
         <HexagramDetailModal
           isOpen={isHexagramModalOpen}
           onClose={handleCloseHexagramModal}

@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add custom base styles or component styles here if needed */
+body {
+  /* Example of applying a Tailwind utility as a base style if desired,
+     but usually Tailwind handles this. Keeping font from index.html for consistency. */
+  font-family: 'Inter', sans-serif; 
+}

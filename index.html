@@ -2,34 +2,71 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>I Ching Musical Composer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body {
-        font-family: 'Inter', sans-serif; /* A common, modern sans-serif font */
+        font-family: 'Inter', sans-serif; /* Consider adding Inter via Google Fonts or local setup */
+        margin: 0;
       }
-      /* For selection pseudo-element, Tailwind classes cannot be directly applied in global CSS */
       ::selection {
-        background-color: #F59E0B; /* Equivalent to Tailwind's yellow-500 */
-        color: #78350F; /* Equivalent to Tailwind's yellow-900 */
+        background-color: #F59E0B; /* Tailwind amber-500 */
+        color: #78350F; /* Tailwind amber-900 */
+      }
+      #critical-error-display {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #330000;
+        color: #ffd700;
+        padding: 20px;
+        box-sizing: border-box;
+        z-index: 999999;
+        font-family: monospace;
+        font-size: 14px;
+        overflow: auto;
+        border: 5px solid #c00;
+      }
+      #critical-error-display h1 {
+        color: #ff4500;
+        font-size: 1.8em;
+        margin-top: 0;
+      }
+      #critical-error-display pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background-color: #440000;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #660000;
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.1.0",
     "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
     "react/": "https://esm.sh/react@^19.1.0/",
-    "@google/genai": "https://esm.sh/@google/genai"
+    "@google/genai": "https://esm.sh/@google/genai@^1.3.0",
+    "vite": "https://esm.sh/vite@^6.3.5",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.5.0"
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body>
+    <div id="critical-error-display">
+      <h1>Critical Application Error</h1>
+      <p>An error occurred. Details below:</p>
+      <pre id="error-message-content">No specific error message captured by fallback.</pre>
+      <pre id="error-stack-content" style="margin-top: 10px;">No stack trace captured by fallback.</pre>
+    </div>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
-</html><link rel="stylesheet" href="index.css">
-<script src="index.tsx" type="module"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
