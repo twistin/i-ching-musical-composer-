@@ -1,0 +1,53 @@
+# .github/workflows/deploy.yml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Or your default branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # If you add a package.json and a build tool like esbuild or Vite:
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
+      # - name: Install dependencies
+      #   run: npm install # Assuming you have a package.json
+      # - name: Build project
+      #   run: npm run build # Your build script that uses the API_KEY
+      #   env:
+      #     API_KEY: ${{ secrets.API_KEY }} # Makes the secret available to the build script
+
+      # If deploying raw files (API_KEY will NOT be injected this way into process.env)
+      # For this project's current structure (no build tool), this means
+      # the API_KEY will be undefined unless you add a build step.
+      # The following steps assume a build output in a 'dist' folder.
+      # Adjust 'dist' to '.' if you are serving from root without a build.
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # This step assumes your build output (or source files if no build) is in the root.
+      # If you have a build step that outputs to 'dist', change './' to './dist'.
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './' # Or your build output directory e.g. './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
